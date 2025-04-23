@@ -3,32 +3,15 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 import torch.nn.functional as F
 import re
-from nltk.corpus import stopwords
-from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
-
-#Download fungsi yg dibutuhkan
-import nltk
-try:
-    nltk.data.find('corpora/stopwords')
-except LookupError:
-    nltk.download('stopwords')
 
 # Inisialisasi resource
 @st.cache_resource
 def load_resources():
-    tokenizer = AutoTokenizer.from_pretrained("Adkurrr/ikd_ft_fullpreprocessing")
-    model = AutoModelForSequenceClassification.from_pretrained("Adkurrr/ikd_ft_fullpreprocessing")
+    tokenizer = AutoTokenizer.from_pretrained("Adkurrr/ikd_ft_withoutStemStopwords")
+    model = AutoModelForSequenceClassification.from_pretrained("Adkurrr/ikd_ft_withoutStemStopwords")
 
-    stop_words = set(stopwords.words('indonesian'))
-    custom_stopwords = {'nya', 'yg', 'kali', 'bgt', 'mls'}
-    stop_words.update(custom_stopwords)
-
-    factory = StemmerFactory()
-    stemmer = factory.create_stemmer()
-
-    return tokenizer, model, stop_words, stemmer
-
-tokenizer, model, stop_words, stemmer = load_resources()
+    return tokenizer, model
+tokenizer, model = load_resources()
 
 # --- Preprocessing sesuai training ---
 def cleansing_text(review):
@@ -38,22 +21,9 @@ def cleansing_text(review):
     review = re.sub(r'[^a-zA-Z\s]', '', review)
     return review
 
-def tokenize_text(text):
-    # Gunakan tokenisasi sederhana untuk bahasa Indonesia
-    return text.split()
-
-def remove_stopwords(tokens):
-    return [word for word in tokens if word not in stop_words]
-
-def stemming_tokens(tokens):
-    return [stemmer.stem(token) for token in tokens]
-
 def preprocess_input(text):
     clean = cleansing_text(text)
-    tokens = tokenize_text(clean)
-    tokens_no_stopword = remove_stopwords(tokens)
-    stemmed_tokens = stemming_tokens(tokens_no_stopword)
-    return " ".join(stemmed_tokens)
+    return clean
 
 # --- Streamlit UI ---
 st.title("Analisis Sentimen Ulasan IKD 🇮🇩")
