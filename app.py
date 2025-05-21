@@ -29,18 +29,18 @@ def load_resources():
 
 @st.cache_resource
 def load_bert_pretrained():
-    model = AutoModelForSequenceClassification.from_pretrained("Adkurrr/ikd_pretrained_fullpraproses")
-    tokenizer = AutoTokenizer.from_pretrained("Adkurrr/ikd_pretrained_fullpraproses")
+    model = AutoModelForSequenceClassification.from_pretrained("Adkurrr/ikd_pretrained_woss")
+    tokenizer = AutoTokenizer.from_pretrained("Adkurrr/ikd_pretrained_woss")
     return model, tokenizer
 
 @st.cache_resource
 def load_lr_model():
-    file_path = hf_hub_download(repo_id="Adkurrr/lr-SVM-fullpraproses", filename="lr_model.pkl")
+    file_path = hf_hub_download(repo_id="Adkurrr/lr-SVM-woss", filename="lr_model.pkl")
     return joblib.load(file_path)
 
 @st.cache_resource
 def load_svm_model():
-    file_path = hf_hub_download(repo_id="Adkurrr/Lr-SVM-fullpraproses", filename="svm_model.pkl")
+    file_path = hf_hub_download(repo_id="Adkurrr/Lr-SVM-woss", filename="svm_model.pkl")
     return joblib.load(file_path)
 
 # === Prediction Functions ===
@@ -56,8 +56,8 @@ def predict_with_bert(text, model, tokenizer):
 def predict_with_model(text, model):
     return model.predict([text])[0]
     
-st.title("Prediksi Sentimen Ulasan IKD (Tanpa Menghapus Stopwords dan Tanpa Stemming)")
-st.write("Masukkan ulasan, pilih model, dan lihat hasil prediksinya!")
+st.title("Prediksi Sentimen Ulasan IKD")
+st.write("Skenario : Tanpa Stopword Removal dan Stemming")
 
 text_input = st.text_area("Masukkan ulasan:", "")
 model_choice = st.selectbox("Pilih Model", [
