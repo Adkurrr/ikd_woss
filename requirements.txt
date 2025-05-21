@@ -11,3 +11,5 @@ nltk
 joblib
 huggingface_hub
 imblearn
+sastrawi
+openpyxl
