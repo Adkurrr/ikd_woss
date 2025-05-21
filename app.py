@@ -1,60 +1,90 @@
 import streamlit as st
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
+import pandas as pd
 import torch
-import torch.nn.functional as F
+import matplotlib.pyplot as plt
+import seaborn as sns
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+import joblib
+from huggingface_hub import hf_hub_download
+from PIL import Image
+import requests
+from io import BytesIO
 import re
+from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
+from nltk.corpus import stopwords
+import nltk
 
+# === Fungsi Praproses Teks ===
+def preprocess_text(text):
+    text = text.lower()
+    text = re.sub(r'[^a-zA-Z\s]', ' ', text)
+    return text
+    
 # Inisialisasi resource
 @st.cache_resource
 def load_resources():
-    tokenizer = AutoTokenizer.from_pretrained("Adkurrr/ikd_ft_withoutStemStopwords")
-    model = AutoModelForSequenceClassification.from_pretrained("Adkurrr/ikd_ft_withoutStemStopwords")
-
+    model = AutoModelForSequenceClassification.from_pretrained("Adkurrr/ikd_ft_woss")
+    tokenizer = AutoTokenizer.from_pretrained("Adkurrr/ikd_ft_woss")
     return tokenizer, model
-tokenizer, model = load_resources()
 
-# --- Preprocessing sesuai training ---
-def cleansing_text(review):
-    if not isinstance(review, str):
-        return ""
-    review = review.lower()
-    review = re.sub(r'[^a-zA-Z\s]', '', review)
-    return review
+@st.cache_resource
+def load_bert_pretrained():
+    model = AutoModelForSequenceClassification.from_pretrained("Adkurrr/ikd_pretrained_fullpraproses")
+    tokenizer = AutoTokenizer.from_pretrained("Adkurrr/ikd_pretrained_fullpraproses")
+    return model, tokenizer
 
-def preprocess_input(text):
-    clean = cleansing_text(text)
-    return clean
+@st.cache_resource
+def load_lr_model():
+    file_path = hf_hub_download(repo_id="Adkurrr/lr-SVM-fullpraproses", filename="lr_model.pkl")
+    return joblib.load(file_path)
 
-# --- Streamlit UI ---
-st.title("Analisis Sentimen Ulasan IKD 🇮🇩")
-st.write("Masukkan ulasan aplikasi Identitas Kependudukan Digital untuk dianalisis sentimennya.")
+@st.cache_resource
+def load_svm_model():
+    file_path = hf_hub_download(repo_id="Adkurrr/Lr-SVM-fullpraproses", filename="svm_model.pkl")
+    return joblib.load(file_path)
 
-text_input = st.text_area("Tulis ulasan di sini:")
+# === Prediction Functions ===
+def predict_with_bert(text, model, tokenizer):
+    model.eval()
+    inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512)
+    with torch.no_grad():
+        outputs = model(**inputs)
+        probs = torch.softmax(outputs.logits, dim=1).squeeze()
+        pred = torch.argmax(probs).item()
+    return pred, probs.numpy()
 
-if st.button("Prediksi Sentimen"):
-    if text_input.strip() == "":
-        st.warning("Masukkan teks terlebih dahulu.")
-    else:
-        # Preprocess dulu
-        preprocessed_text = preprocess_input(text_input)
+def predict_with_model(text, model):
+    return model.predict([text])[0]
+    
+st.title("Prediksi Sentimen Ulasan IKD")
+st.write("Masukkan ulasan, pilih model, dan lihat hasil prediksinya!")
 
-        # Tokenisasi dan prediksi
-        inputs = tokenizer(preprocessed_text, return_tensors="pt", truncation=True, padding=True)
+text_input = st.text_area("Masukkan ulasan:", "")
+model_choice = st.selectbox("Pilih Model", [
+        "BERT Finetuned", "BERT Pretrained", "Logistic Regression", "SVM"
+    ])
 
-        with torch.no_grad():
-            outputs = model(**inputs)
-            probs = F.softmax(outputs.logits, dim=1)
-            pred = torch.argmax(probs, dim=1).item()
-            confidence = probs[0][pred].item()
+if st.button("🔍 Prediksi Sentimen"):
+        if not text_input.strip():
+            st.warning("⚠️ Ulasan Tidak Boleh Kosong")
+        else:
+            # Praproses semua input sebelum diprediksi
+            processed_text = preprocess_text(text_input)
 
-        # Mapping label: pastikan sesuai config.json
-        label_map = {
-            0: "Negatif",
-            1: "Positif"
-        }
+            if model_choice == "BERT Finetuned":
+                model, tokenizer = load_bert_finetuned()
+                label, probs = predict_with_bert(processed_text, model, tokenizer)
+            elif model_choice == "BERT Pretrained":
+                model, tokenizer = load_bert_pretrained()
+                label, probs = predict_with_bert(processed_text, model, tokenizer)
+            elif model_choice == "Logistic Regression":
+                model = load_lr_model()
+                label = predict_with_model(processed_text, model)
+            elif model_choice == "SVM":
+                model = load_svm_model()
+                label = predict_with_model(processed_text, model)
+            else:
+                label = "?"
 
-        sentiment = label_map.get(pred, "Tidak diketahui")
-        
-        st.subheader("Hasil Analisis")
-        st.write(f"**Sentimen:** {sentiment}")
-        st.write(f"**Kepercayaan:** {confidence * 100:.2f}%")
+            sentimen_label = "Positif" if str(label) in ["1", "positif", "positive"] else "Negatif"
+            st.success(f"Prediksi Sentimen: {sentimen_label}")
