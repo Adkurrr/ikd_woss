@@ -56,7 +56,7 @@ def predict_with_bert(text, model, tokenizer):
 def predict_with_model(text, model):
     return model.predict([text])[0]
     
-st.title("Prediksi Sentimen Ulasan IKD")
+st.title("Prediksi Sentimen Ulasan IKD (Tanpa Menghapus Stopwords dan Tanpa Stemming)")
 st.write("Masukkan ulasan, pilih model, dan lihat hasil prediksinya!")
 
 text_input = st.text_area("Masukkan ulasan:", "")
