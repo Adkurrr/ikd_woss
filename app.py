@@ -20,7 +20,7 @@ def preprocess_text(text):
     
 # Inisialisasi resource
 @st.cache_resource
-def load_resources():
+def load_bert_finetuned():
     model = AutoModelForSequenceClassification.from_pretrained("Adkurrr/ikd_ft_woss")
     tokenizer = AutoTokenizer.from_pretrained("Adkurrr/ikd_ft_woss")
     return tokenizer, model
