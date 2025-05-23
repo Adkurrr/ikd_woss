@@ -13,3 +13,4 @@ huggingface_hub
 imblearn
 sastrawi
 openpyxl
+joblib
