@@ -33,12 +33,12 @@ def load_bert_pretrained():
 
 @st.cache_resource
 def load_lr_model():
-    file_path = hf_hub_download(repo_id="Adkurrr/lr-SVM-woss", filename="lr_model.pkl")
+    file_path = hf_hub_download(repo_id="Adkurrr/lr-SVM-woss", filename="lr_model_woss.pkl")
     return joblib.load(file_path)
 
 @st.cache_resource
 def load_svm_model():
-    file_path = hf_hub_download(repo_id="Adkurrr/Lr-SVM-woss", filename="svm_model.pkl")
+    file_path = hf_hub_download(repo_id="Adkurrr/Lr-SVM-woss", filename="svm_model_woss.pkl")
     return joblib.load(file_path)
 
 # === Prediction Functions ===
