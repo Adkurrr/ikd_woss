@@ -23,7 +23,7 @@ def preprocess_text(text):
 def load_bert_finetuned():
     model = AutoModelForSequenceClassification.from_pretrained("Adkurrr/ikd_ft_woss")
     tokenizer = AutoTokenizer.from_pretrained("Adkurrr/ikd_ft_woss")
-    return tokenizer, model
+    return model, tokenizer
 
 @st.cache_resource
 def load_bert_pretrained():
